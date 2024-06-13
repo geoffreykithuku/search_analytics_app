@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Search Analytics</title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag 'application', media: 'all' %>
+    <%= javascript_include_tag 'application' %>
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Search Analytics</h1>
+    <input type="text" id="search-box" placeholder="Search articles...">
+    <table>
+      <thead>
+        <tr>
+          <th>IP</th>
+          <th>Query</th>
+          <th>Count</th>
+        </tr>
+      </thead>
+      <tbody id="analytics-table">
+        <% @search_queries.each do |query| %>
+          <tr>
+            <td><%= query[:ip] %></td>
+            <td><%= query[:query] %></td>
+            <td><%= query[:count] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        const searchBox = document.getElementById("search-box");
+        const analyticsTable = document.getElementById("analytics-table");
+        let timeout = null;
+        let lastQuery = "";
+
+        const updateTable = () => {
+          fetch("/search_queries.json")
+            .then(response => response.json())
+            .then(data => {
+              analyticsTable.innerHTML = '';
+              data.forEach(query => {
+                const row = document.createElement("tr");
+                const ipCell = document.createElement("td");
+                ipCell.textContent = query.ip;
+                const queryCell = document.createElement("td");
+                queryCell.textContent = query.query;
+                const countCell = document.createElement("td");
+                countCell.textContent = query.count;
+                row.appendChild(ipCell);
+                row.appendChild(queryCell);
+                row.appendChild(countCell);
+                analyticsTable.appendChild(row);
+              });
+            });
+        };
+
+        if (searchBox) {
+          searchBox.addEventListener("input", function(event) {
+            clearTimeout(timeout);
+
+            timeout = setTimeout(function() {
+              const query = event.target.value.trim();
+
+              if (query.length > 2 && query !== lastQuery && !query.endsWith(" ")) {
+                lastQuery = query;
+
+                const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+
+                fetch("/search_queries", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-Token": csrfToken,
+                  },
+                  body: JSON.stringify({ search_query: { query: query } }),
+                })
+                .then(response => {
+                  if (response.status === 201) {
+                    updateTable();
+                  }
+                });
+              }
+            }, 300);
+          });
+        }
+
+        updateTable();
+      });
+    </script>
+  </body>
+</html>
+

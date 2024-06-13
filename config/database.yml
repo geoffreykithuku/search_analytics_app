@@ -1,0 +1,21 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+  host: dpg-cpkpdcsf7o1s73ctmm20-a.oregon-postgres.render.com
+  username: search_analytics_app_user
+  password: yGftpO68XWQ9u1ciu4NxYUVHOmJzeAJN
+
+development:
+  <<: *default
+  database: search_analytics_app
+
+test:
+  <<: *default
+  database: search_analytics_app_test
+
+production:
+  <<: *default
+  database: search_analytics_app_production
+  username: search_analytics_app_user
+  password: yGftpO68XWQ9u1ciu4NxYUVHOmJzeAJN
